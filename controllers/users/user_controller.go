@@ -1,7 +1,6 @@
 package users
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,7 +21,6 @@ func CreateUSer(c *gin.Context) {
 		c.JSON(saveErr.Status, saveErr)
 		return
 	}
-	fmt.Println(user)
 	c.JSON(http.StatusCreated, result)
 }
 
