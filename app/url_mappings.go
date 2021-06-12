@@ -1,3 +1,7 @@
 package app
 
-func mapUrls() {}
+import "github.com/jnunortiz/bookstore_users-api/domain/users/controllers"
+
+func mapUrls() {
+	router.GET("/ping", controllers.Ping)
+}
