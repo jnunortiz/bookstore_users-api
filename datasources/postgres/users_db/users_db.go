@@ -18,6 +18,7 @@ const (
 )
 
 var (
+	Client   *sql.DB
 	host     = os.Getenv(PGHOST)
 	port     = os.Getenv(PGPORT)
 	user     = os.Getenv(PGUSER)
@@ -30,14 +31,12 @@ func init() {
 	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable search_path=%s",
 		host, port, user, password, dbname, schema)
-	Client, err := sql.Open("postgres", psqlInfo)
+	var err error
+	Client, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
 		panic(err)
 	}
-	defer Client.Close()
 	if err = Client.Ping(); err != nil {
 		panic(err)
 	}
-
-	fmt.Println("Successfully connected!")
 }
