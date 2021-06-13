@@ -3,21 +3,31 @@ package users_db
 import (
 	"database/sql"
 	"fmt"
+	"os"
 
 	_ "github.com/lib/pq"
 )
 
 const (
-	host     = "localhost"
-	port     = 5432
-	user     = "postgres"
-	password = "postgres"
-	dbname   = "dev_bookstore"
-	schema   = "users_db"
+	PGHOST     = "PGHOST"
+	PGPORT     = "PGPORT"
+	PGUSER     = "PGUSER"
+	PGPASSWORD = "PGPASSWORD"
+	PGDATABASE = "PGDATABASE"
+	PGSCHEMA   = "PGSCHEMA"
+)
+
+var (
+	host     = os.Getenv(PGHOST)
+	port     = os.Getenv(PGPORT)
+	user     = os.Getenv(PGUSER)
+	password = os.Getenv(PGPASSWORD)
+	dbname   = os.Getenv(PGDATABASE)
+	schema   = os.Getenv(PGSCHEMA)
 )
 
 func init() {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s "+
 		"password=%s dbname=%s sslmode=disable search_path=%s",
 		host, port, user, password, dbname, schema)
 	Client, err := sql.Open("postgres", psqlInfo)
