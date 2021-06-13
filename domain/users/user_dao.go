@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	queryInsertUser = "INSERT INTO users(first_name, last_name, email, date_created) VALUES ($1, $2, $3, $4);"
+	queryInsertUser = "INSERT INTO users(first_name, last_name, email, date_created) VALUES ($1, $2, $3, $4) RETURNING id;"
 )
 
 var (
@@ -38,14 +38,10 @@ func (user *User) Save() *errors.RestErr {
 		return errors.NewInternalServerError(err.Error())
 	}
 	defer stmt.Close()
-	insertResult, err := stmt.Exec(user.FirstName, user.LastName, user.Email, date_utils.GetNowString())
+	user.DateCreated = date_utils.GetNowString()
+	err = stmt.QueryRow(user.FirstName, user.LastName, user.Email, user.DateCreated).Scan(&user.Id)
 	if err != nil {
 		return errors.NewInternalServerError(fmt.Sprintf("Error when trying to insert user: %s", err.Error()))
 	}
-	userId, err := insertResult.LastInsertId()
-	if err != nil {
-		return errors.NewInternalServerError(fmt.Sprintf("Error when to get last inserted user id: %s", err.Error()))
-	}
-	user.Id = userId
 	return nil
 }
