@@ -13,6 +13,14 @@ func GetUser(userId int64) (*users.User, *errors.RestErr) {
 	return result, nil
 }
 
+func DeleteUser(userId int64) (*users.User, *errors.RestErr) {
+	result := &users.User{Id: userId}
+	if err := result.Delete(); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 func CreateUSer(user users.User) (*users.User, *errors.RestErr) {
 	if err := user.ValidateEmail(); err != nil {
 		return nil, err
