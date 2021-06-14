@@ -1,34 +1,29 @@
 package users
 
 import (
-	"fmt"
-
 	"github.com/jnunortiz/bookstore_users-api/datasources/postgres/users_db"
 	"github.com/jnunortiz/bookstore_users-api/utils/date_utils"
 	"github.com/jnunortiz/bookstore_users-api/utils/errors"
+	"github.com/jnunortiz/bookstore_users-api/utils/postgresql_utils"
 )
 
 const (
-	queryInsertUser = "INSERT INTO users(first_name, last_name, email, date_created) VALUES ($1, $2, $3, $4);"
-)
-
-var (
-	usersDB = make(map[int64]*User)
+	queryInsertUser = "INSERT INTO users(first_name, last_name, email, date_created) VALUES ($1, $2, $3, $4) RETURNING id;"
+	queryGetUser    = "SELECT id, first_name, last_name, email, date_created FROM users WHERE id = $1;"
+	queryUpdateUser = "UPDATE users SET first_name = $1, last_name = $2, email = $3 WHERE id = $4;"
+	NoRowsError     = "no rows in result set"
 )
 
 func (user *User) Get() *errors.RestErr {
-	if err := users_db.Client.Ping(); err != nil {
-		panic(err)
+	stmt, err := users_db.Client.Prepare(queryGetUser)
+	if err != nil {
+		return errors.NewInternalServerError(err.Error())
 	}
-	result := usersDB[user.Id]
-	if result == nil {
-		return errors.NewNotFoundError(fmt.Sprintf("user %d not found", user.Id))
+	defer stmt.Close()
+	result := stmt.QueryRow(user.Id)
+	if err := result.Scan(&user.Id, &user.FirstName, &user.LastName, &user.Email, &user.DateCreated); err != nil {
+		return postgresql_utils.ParseError(err)
 	}
-	user.Id = result.Id
-	user.FirstName = result.FirstName
-	user.LastName = result.LastName
-	user.Email = result.Email
-	user.DateCreated = result.DateCreated
 	return nil
 }
 
@@ -38,14 +33,23 @@ func (user *User) Save() *errors.RestErr {
 		return errors.NewInternalServerError(err.Error())
 	}
 	defer stmt.Close()
-	insertResult, err := stmt.Exec(user.FirstName, user.LastName, user.Email, date_utils.GetNowString())
+	user.DateCreated = date_utils.GetNowString()
+	err = stmt.QueryRow(user.FirstName, user.LastName, user.Email, user.DateCreated).Scan(&user.Id)
 	if err != nil {
-		return errors.NewInternalServerError(fmt.Sprintf("Error when trying to insert user: %s", err.Error()))
+		return postgresql_utils.ParseError(err)
 	}
-	userId, err := insertResult.LastInsertId()
+	return nil
+}
+
+func (user *User) Update(NewUser User) *errors.RestErr {
+	stmt, err := users_db.Client.Prepare(queryUpdateUser)
 	if err != nil {
-		return errors.NewInternalServerError(fmt.Sprintf("Error when to get last inserted user id: %s", err.Error()))
+		return errors.NewInternalServerError(err.Error())
 	}
-	user.Id = userId
+	defer stmt.Close()
+	_, err = stmt.Exec(NewUser.FirstName, NewUser.LastName, NewUser.Email, user.Id)
+	if err != nil {
+		return postgresql_utils.ParseError(err)
+	}
 	return nil
 }
