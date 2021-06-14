@@ -14,24 +14,22 @@ type User struct {
 	DateCreated string `json:"date_created"`
 }
 
-func (user *User) ValidateFirstName() *errors.RestErr {
+func (user *User) trimUser() {
 	user.FirstName = strings.TrimSpace(strings.ToLower(user.FirstName))
-	if user.FirstName == "" {
-		return errors.NewBadRequestError("invalid or missing first name")
-	}
-	return nil
+	user.LastName = strings.TrimSpace(strings.ToLower(user.LastName))
+	user.Email = strings.TrimSpace(strings.ToLower(user.Email))
 }
 
-func (user *User) ValidateLastName() *errors.RestErr {
-	user.LastName = strings.TrimSpace(strings.ToLower(user.LastName))
-	if user.LastName == "" {
-		return errors.NewBadRequestError("invalid or missing last name")
+func (user *User) ValidateDataExists() *errors.RestErr {
+	user.trimUser()
+	if user.Email == "" && user.FirstName == "" && user.LastName == "" {
+		return errors.NewBadRequestError("no information received for update")
 	}
 	return nil
 }
 
 func (user *User) ValidateEmail() *errors.RestErr {
-	user.Email = strings.TrimSpace(strings.ToLower(user.Email))
+	user.trimUser()
 	if user.Email == "" {
 		return errors.NewBadRequestError("invalid or missing email address")
 	}
@@ -39,14 +37,26 @@ func (user *User) ValidateEmail() *errors.RestErr {
 }
 
 func (user *User) ValidatePayload() *errors.RestErr {
-	if err := user.ValidateFirstName(); err != nil {
-		return err
-	}
-	if err := user.ValidateLastName(); err != nil {
-		return err
-	}
 	if err := user.ValidateEmail(); err != nil {
 		return err
 	}
+	if user.FirstName == "" {
+		return errors.NewBadRequestError("invalid or missing first name")
+	}
+	if user.LastName == "" {
+		return errors.NewBadRequestError("invalid or missing last name")
+	}
 	return nil
+}
+
+func (user *User) UpdateUserInfo(NewUser User) {
+	if NewUser.FirstName != "" {
+		user.FirstName = NewUser.FirstName
+	}
+	if NewUser.LastName != "" {
+		user.LastName = NewUser.LastName
+	}
+	if NewUser.Email != "" {
+		user.Email = NewUser.Email
+	}
 }

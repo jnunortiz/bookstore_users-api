@@ -23,17 +23,23 @@ func CreateUSer(user users.User) (*users.User, *errors.RestErr) {
 	return &user, nil
 }
 
-func UpdateUser(user users.User) (*users.User, *errors.RestErr) {
-	if err := user.ValidatePayload(); err != nil {
-		return nil, err
-	}
+func UpdateUser(isPartial bool, user users.User) (*users.User, *errors.RestErr) {
 	current, err := GetUser(user.Id)
 	if err != nil {
 		return nil, err
 	}
-	if err := current.Update(user); err != nil {
+	if isPartial {
+		err = user.ValidateDataExists()
+	} else {
+		err = user.ValidatePayload()
+	}
+	if err != nil {
+		return nil, err
+	}
+	current.UpdateUserInfo(user)
+	if err := current.Update(); err != nil {
 		return nil, err
 	}
 	user.DateCreated = current.DateCreated
-	return &user, nil
+	return current, nil
 }

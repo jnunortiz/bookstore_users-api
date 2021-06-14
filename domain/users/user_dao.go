@@ -41,13 +41,13 @@ func (user *User) Save() *errors.RestErr {
 	return nil
 }
 
-func (user *User) Update(NewUser User) *errors.RestErr {
+func (user *User) Update() *errors.RestErr {
 	stmt, err := users_db.Client.Prepare(queryUpdateUser)
 	if err != nil {
 		return errors.NewInternalServerError(err.Error())
 	}
 	defer stmt.Close()
-	_, err = stmt.Exec(NewUser.FirstName, NewUser.LastName, NewUser.Email, user.Id)
+	_, err = stmt.Exec(user.FirstName, user.LastName, user.Email, user.Id)
 	if err != nil {
 		return postgresql_utils.ParseError(err)
 	}
